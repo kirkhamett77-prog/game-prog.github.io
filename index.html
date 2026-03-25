@@ -171,18 +171,19 @@
     position: relative;
     z-index: 5;
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    flex-wrap: nowrap;
+    gap: 12px;
     justify-content: center;
-    padding: 0 20px 40px;
+    padding: 0 12px 40px;
     max-width: 1200px;
     margin: 0 auto;
+    align-items: flex-start;
   }
 
   /* Puzzle board */
   .board-wrap {
-    flex: 1;
-    min-width: 280px;
+    flex: 1 1 0;
+    min-width: 0;
     max-width: 520px;
   }
 
@@ -207,22 +208,27 @@
 
   /* Piece tray */
   .tray-wrap {
-    flex: 1;
-    min-width: 260px;
-    max-width: 360px;
+    flex: 0 0 auto;
+    width: 140px;
+  }
+
+  @media (min-width: 700px) {
+    .tray-wrap { width: 220px; }
   }
 
   #piece-tray {
     background: rgba(255,255,255,0.03);
     border: 2px solid rgba(255,255,255,0.07);
     border-radius: 16px;
-    padding: 16px;
-    min-height: 300px;
+    padding: 10px;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     align-content: flex-start;
     box-shadow: inset 0 2px 20px rgba(0,0,0,0.3);
+    /* 화면 높이에 맞게 스크롤 */
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
   }
 
   /* ─── PUZZLE PIECES ─── */
@@ -398,11 +404,6 @@
 
   .pop { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-  /* ─── RESPONSIVE ─── */
-  @media (max-width: 600px) {
-    .game-wrapper { flex-direction: column; align-items: center; }
-    .board-wrap, .tray-wrap { max-width: 100%; width: 100%; }
-  }
 </style>
 </head>
 <body>
@@ -567,9 +568,13 @@ function startGame() {
 
   updateStats();
 
-  // Board sizing
+  // Board sizing — 전체 화면에서 트레이(140~220px) + gap(12px) 제외
   const boardEl = document.getElementById('puzzle-board');
-  const maxW = Math.min(boardEl.parentElement.offsetWidth - 4, 500);
+  const trayW = window.innerWidth >= 700 ? 220 : 140;
+  const gapPad = 12 * 2 + 12; // padding*2 + gap
+  const available = Math.min(window.innerWidth - trayW - gapPad, 500);
+  const maxW = Math.max(available, 160);
+  boardEl.style.width = 'auto'; // reset first
   boardW = maxW;
   boardH = maxW;
   pieceW = Math.floor(boardW / grid);

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>직소 퍼즐</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --card: #0f3460;
+    --accent: #e94560;
+    --gold: #f5a623;
+    --teal: #00b4d8;
+    --green: #06d6a0;
+    --text: #eaeaea;
+    --muted: #8892b0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.1) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.12) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 40%, rgba(255,255,255,0.1) 0%, transparent 100%),
+      radial-gradient(2px 2px at 90% 30%, rgba(255,255,255,0.06) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 36px 20px 20px;
+  }
+
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    background: linear-gradient(135deg, var(--gold), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  /* ─── CONTROLS ─── */
+  .controls {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+  }
+
+  .btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: translateY(0); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #c1121f);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(233,69,96,0.4);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, var(--teal), #0077b6);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(0,180,216,0.3);
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #d4880a);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(245,166,35,0.3);
+  }
+
+  select {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    border-radius: 50px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+
+  .upload-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    padding: 10px 22px;
+    border-radius: 50px;
+    background: var(--card);
+    border: 2px dashed rgba(255,255,255,0.2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .upload-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ─── STATS BAR ─── */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 10px 20px 20px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* ─── GAME AREA ─── */
+  .game-wrapper {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    padding: 0 20px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Puzzle board */
+  .board-wrap {
+    flex: 1;
+    min-width: 280px;
+    max-width: 520px;
+  }
+
+  .board-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  #puzzle-board {
+    position: relative;
+    background: rgba(255,255,255,0.03);
+    border: 2px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+  /* Piece tray */
+  .tray-wrap {
+    flex: 1;
+    min-width: 260px;
+    max-width: 360px;
+  }
+
+  #piece-tray {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 16px;
+    min-height: 300px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-content: flex-start;
+    box-shadow: inset 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+  /* ─── PUZZLE PIECES ─── */
+  .puzzle-cell {
+    position: absolute;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: box-shadow 0.15s ease;
+    overflow: hidden;
+  }
+
+  .puzzle-cell.correct {
+    border-color: rgba(6,214,160,0.4);
+    box-shadow: 0 0 10px rgba(6,214,160,0.3);
+  }
+
+  .tray-piece {
+    cursor: grab;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .tray-piece:hover {
+    transform: scale(1.06) rotate(-1deg);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    border-color: var(--gold);
+    z-index: 10;
+  }
+
+  .tray-piece.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+
+  .tray-piece canvas,
+  .puzzle-cell canvas {
+    display: block;
+  }
+
+  /* ─── HINT OVERLAY ─── */
+  #hint-overlay {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 5;
+  }
+  #hint-overlay.show { opacity: 0.25; }
+
+  /* ─── SUCCESS SCREEN ─── */
+  .success-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(10,10,20,0.92);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+    padding: 20px;
+  }
+  .success-screen.show { display: flex; }
+
+  .success-emoji {
+    font-size: 5rem;
+    animation: bounce 0.6s ease infinite alternate;
+  }
+
+  .success-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    background: linear-gradient(135deg, var(--gold), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .success-stats {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .success-stats span {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-wrap {
+    position: relative;
+    z-index: 10;
+    max-width: 500px;
+    margin: 0 auto 16px;
+    padding: 0 20px;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal), var(--green));
+    border-radius: 10px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .progress-text {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-12px); }
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .pop { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 600px) {
+    .game-wrapper { flex-direction: column; align-items: center; }
+    .board-wrap, .tray-wrap { max-width: 100%; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <h1>🧩 직소 퍼즐</h1>
+  <p class="subtitle">조각을 맞춰 그림을 완성하세요!</p>
+</header>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <select id="difficulty">
+    <option value="3">쉬움 (3×3)</option>
+    <option value="4" selected>보통 (4×4)</option>
+    <option value="5">어려움 (5×5)</option>
+    <option value="6">최고난도 (6×6)</option>
+  </select>
+  <button class="btn btn-primary" onclick="startGame()">🎮 새 게임</button>
+  <button class="btn btn-secondary" onclick="toggleHint()">💡 힌트</button>
+  <button class="btn btn-gold" onclick="shuffleTray()">🔀 섞기</button>
+  <label class="upload-btn">📷 사진 올리기 <input type="file" accept="image/*" style="display:none" onchange="loadImage(event)"/></label>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="progress-text" id="progress-text">게임을 시작하세요!</div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-value" id="stat-moves">0</div><div class="stat-label">이동 횟수</div></div>
+  <div class="stat"><div class="stat-value" id="stat-time">0:00</div><div class="stat-label">시간</div></div>
+  <div class="stat"><div class="stat-value" id="stat-left">-</div><div class="stat-label">남은 조각</div></div>
+</div>
+
+<!-- GAME -->
+<div class="game-wrapper">
+  <div class="board-wrap">
+    <div class="board-label">퍼즐 보드</div>
+    <div id="puzzle-board">
+      <canvas id="hint-overlay"></canvas>
+    </div>
+  </div>
+  <div class="tray-wrap">
+    <div class="board-label">조각 모음</div>
+    <div id="piece-tray"></div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-screen" id="success-screen">
+  <div class="success-emoji">🎉</div>
+  <div class="success-title">완성!</div>
+  <div class="success-stats" id="success-stats"></div>
+  <button class="btn btn-primary" onclick="startGame(); document.getElementById('success-screen').classList.remove('show')">다시 하기</button>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────
+let grid = 4;
+let pieceW, pieceH, boardW, boardH;
+let totalPieces;
+let correctCount = 0;
+let moves = 0;
+let seconds = 0;
+let timerInterval = null;
+let hintVisible = false;
+let dragPieceId = null;
+
+// Piece state: { id, row, col, placed, el }
+let pieces = [];
+
+// Default image: colorful gradient
+let sourceImage = null;
+
+// ── Init ────────────────────────────────────────────
+window.onload = () => {
+  createDefaultImage().then(img => { sourceImage = img; startGame(); });
+};
+
+function createDefaultImage() {
+  return new Promise(resolve => {
+    const c = document.createElement('canvas');
+    c.width = 480; c.height = 480;
+    const ctx = c.getContext('2d');
+
+    // Colorful gradient background
+    const grad = ctx.createLinearGradient(0, 0, 480, 480);
+    grad.addColorStop(0, '#e94560');
+    grad.addColorStop(0.33, '#f5a623');
+    grad.addColorStop(0.66, '#00b4d8');
+    grad.addColorStop(1, '#06d6a0');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 480, 480);
+
+    // Fun shapes
+    const shapes = [
+      { x: 120, y: 120, r: 80, color: 'rgba(255,255,255,0.15)' },
+      { x: 360, y: 150, r: 60, color: 'rgba(255,255,255,0.1)' },
+      { x: 240, y: 300, r: 100, color: 'rgba(0,0,0,0.1)' },
+      { x: 80,  y: 360, r: 50, color: 'rgba(255,255,255,0.12)' },
+      { x: 400, y: 360, r: 70, color: 'rgba(255,255,255,0.08)' },
+    ];
+    shapes.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+    });
+
+    // Stars / symbols
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = 'bold 60px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const emojis = ['🌟','🎨','🌈','🦋','🌸'];
+    const pos = [[120,120],[360,120],[240,240],[120,360],[360,360]];
+    emojis.forEach((e, i) => ctx.fillText(e, pos[i][0], pos[i][1]));
+
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = c.toDataURL();
+  });
+}
+
+// ── Load custom image ──────────────────────────────
+function loadImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => { sourceImage = img; startGame(); };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Start Game ─────────────────────────────────────
+function startGame() {
+  grid = parseInt(document.getElementById('difficulty').value);
+  totalPieces = grid * grid;
+  correctCount = 0;
+  moves = 0;
+  pieces = [];
+
+  clearInterval(timerInterval);
+  seconds = 0;
+  updateTimer();
+  timerInterval = setInterval(() => { seconds++; updateTimer(); }, 1000);
+
+  updateStats();
+
+  // Board sizing
+  const boardEl = document.getElementById('puzzle-board');
+  const maxW = Math.min(boardEl.parentElement.offsetWidth - 4, 500);
+  boardW = maxW;
+  boardH = maxW;
+  pieceW = Math.floor(boardW / grid);
+  pieceH = Math.floor(boardH / grid);
+  boardW = pieceW * grid;
+  boardH = pieceH * grid;
+
+  boardEl.style.width  = boardW + 'px';
+  boardEl.style.height = boardH + 'px';
+
+  // Hint canvas
+  const hint = document.getElementById('hint-overlay');
+  hint.width  = boardW;
+  hint.height = boardH;
+  hint.style.width  = boardW + 'px';
+  hint.style.height = boardH + 'px';
+  const hctx = hint.getContext('2d');
+  hctx.drawImage(sourceImage, 0, 0, boardW, boardH);
+  if (hintVisible) { hintVisible = false; hint.classList.remove('show'); }
+
+  // Clear board (keep hint overlay)
+  const cells = boardEl.querySelectorAll('.puzzle-cell');
+  cells.forEach(c => c.remove());
+
+  // Draw pieces
+  const order = shuffleArray([...Array(totalPieces).keys()]);
+
+  order.forEach((id, trayIdx) => {
+    const row = Math.floor(id / grid);
+    const col = id % grid;
+
+    // Draw piece on small canvas
+    const pc = document.createElement('canvas');
+    pc.width  = pieceW;
+    pc.height = pieceH;
+    const pctx = pc.getContext('2d');
+    pctx.drawImage(sourceImage,
+      col * (sourceImage.width / grid),
+      row * (sourceImage.height / grid),
+      sourceImage.width / grid,
+      sourceImage.height / grid,
+      0, 0, pieceW, pieceH
+    );
+
+    // Board empty cell
+    const cell = document.createElement('div');
+    cell.className = 'puzzle-cell';
+    cell.style.left   = (col * pieceW) + 'px';
+    cell.style.top    = (row * pieceH) + 'px';
+    cell.style.width  = pieceW + 'px';
+    cell.style.height = pieceH + 'px';
+    cell.dataset.id   = id;
+    cell.addEventListener('dragover', e => e.preventDefault());
+    cell.addEventListener('drop', e => dropOnCell(e, id));
+    boardEl.appendChild(cell);
+
+    // Tray piece
+    const tp = document.createElement('div');
+    tp.className = 'tray-piece pop';
+    tp.draggable = true;
+    tp.dataset.id = id;
+    tp.style.animationDelay = (trayIdx * 30) + 'ms';
+
+    const tpc = pc.cloneNode();
+    tpc.getContext('2d').drawImage(pc, 0, 0);
+    tp.appendChild(tpc);
+
+    tp.addEventListener('dragstart', e => {
+      dragPieceId = id;
+      setTimeout(() => tp.classList.add('dragging'), 0);
+    });
+    tp.addEventListener('dragend', () => {
+      tp.classList.remove('dragging');
+      dragPieceId = null;
+    });
+
+    document.getElementById('piece-tray').appendChild(tp);
+
+    pieces.push({ id, row, col, placed: false, trayEl: tp, cellEl: cell });
+  });
+
+  // Clear tray (rebuild)
+  const tray = document.getElementById('piece-tray');
+  tray.innerHTML = '';
+  pieces.forEach(p => tray.appendChild(p.trayEl));
+
+  updateProgress();
+}
+
+// ── Drop logic ────────────────────────────────────
+function dropOnCell(e, cellId) {
+  e.preventDefault();
+  if (dragPieceId === null) return;
+  if (dragPieceId !== cellId) {
+    // Wrong cell — wiggle feedback
+    const cell = document.querySelector(`.puzzle-cell[data-id="${cellId}"]`);
+    cell.style.boxShadow = '0 0 12px rgba(233,69,96,0.7)';
+    setTimeout(() => cell.style.boxShadow = '', 500);
+    return;
+  }
+
+  // Correct!
+  const piece = pieces.find(p => p.id === dragPieceId);
+  if (!piece || piece.placed) return;
+
+  moves++;
+  correctCount++;
+  piece.placed = true;
+
+  // Draw piece onto cell
+  const pc = document.createElement('canvas');
+  pc.width  = pieceW;
+  pc.height = pieceH;
+  const pctx = pc.getContext('2d');
+  pctx.drawImage(sourceImage,
+    piece.col * (sourceImage.width / grid),
+    piece.row * (sourceImage.height / grid),
+    sourceImage.width / grid,
+    sourceImage.height / grid,
+    0, 0, pieceW, pieceH
+  );
+
+  piece.cellEl.appendChild(pc);
+  piece.cellEl.classList.add('correct');
+
+  // Remove from tray
+  piece.trayEl.remove();
+
+  updateStats();
+  updateProgress();
+
+  if (correctCount === totalPieces) {
+    clearInterval(timerInterval);
+    setTimeout(showSuccess, 600);
+  }
+}
+
+// ── Hint ──────────────────────────────────────────
+function toggleHint() {
+  hintVisible = !hintVisible;
+  document.getElementById('hint-overlay').classList.toggle('show', hintVisible);
+}
+
+// ── Shuffle tray ──────────────────────────────────
+function shuffleTray() {
+  const tray = document.getElementById('piece-tray');
+  const children = Array.from(tray.children);
+  shuffleArray(children).forEach(c => tray.appendChild(c));
+}
+
+// ── Stats & Progress ──────────────────────────────
+function updateStats() {
+  document.getElementById('stat-moves').textContent = moves;
+  document.getElementById('stat-left').textContent  = totalPieces - correctCount;
+}
+
+function updateTimer() {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  document.getElementById('stat-time').textContent = m + ':' + String(s).padStart(2, '0');
+}
+
+function updateProgress() {
+  const pct = Math.round((correctCount / totalPieces) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent =
+    correctCount === 0 ? '게임을 시작하세요!' :
+    correctCount === totalPieces ? '완성! 🎉' :
+    `${correctCount} / ${totalPieces} 조각 완료 (${pct}%)`;
+}
+
+function showSuccess() {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  document.getElementById('success-stats').innerHTML =
+    `⏱ 완료 시간: <span>${m}분 ${s}초</span><br>
+     🖱 이동 횟수: <span>${moves}번</span><br>
+     🧩 조각 수: <span>${totalPieces}개</span>`;
+  document.getElementById('success-screen').classList.add('show');
+}
+
+// ── Utils ─────────────────────────────────────────
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+</script>
+</body>
+</html>

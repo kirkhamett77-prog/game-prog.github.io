@@ -260,6 +260,42 @@
     cursor: grabbing;
   }
 
+  /* Mobile selected */
+  .tray-piece.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.5), 0 8px 20px rgba(0,0,0,0.4);
+    transform: scale(1.08);
+    z-index: 10;
+  }
+
+  /* Touch ghost */
+  #touch-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.8;
+    border-radius: 6px;
+    overflow: hidden;
+    display: none;
+    border: 2px solid var(--gold);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+
+  .puzzle-cell.highlight {
+    box-shadow: inset 0 0 0 3px rgba(245,166,35,0.6) !important;
+  }
+
+  .mobile-tip {
+    display: none;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0 20px 8px;
+    position: relative;
+    z-index: 10;
+  }
+  @media (hover: none) { .mobile-tip { display: block; } }
+
   .tray-piece canvas,
   .puzzle-cell canvas {
     display: block;
@@ -397,6 +433,12 @@
   <div class="progress-text" id="progress-text">게임을 시작하세요!</div>
 </div>
 
+<!-- MOBILE TIP -->
+<div class="mobile-tip">💡 조각을 탭해서 선택 → 보드의 빈칸을 탭해서 놓기</div>
+
+<!-- TOUCH GHOST -->
+<div id="touch-ghost"></div>
+
 <!-- STATS -->
 <div class="stats">
   <div class="stat"><div class="stat-value" id="stat-moves">0</div><div class="stat-label">이동 횟수</div></div>
@@ -438,10 +480,13 @@ let timerInterval = null;
 let hintVisible = false;
 let dragPieceId = null;
 
+// Mobile tap-to-place state
+let selectedPieceId = null;
+
 // Piece state: { id, row, col, placed, el }
 let pieces = [];
 
-// Default image: colorful gradient
+// Default image
 let sourceImage = null;
 
 // ── Init ────────────────────────────────────────────
@@ -579,6 +624,7 @@ function startGame() {
     cell.dataset.id   = id;
     cell.addEventListener('dragover', e => e.preventDefault());
     cell.addEventListener('drop', e => dropOnCell(e, id));
+    cell.addEventListener('click', () => tapOnCell(id));
     boardEl.appendChild(cell);
 
     // Tray piece
@@ -601,6 +647,14 @@ function startGame() {
       dragPieceId = null;
     });
 
+    // ── Touch / tap support ──
+    tp.addEventListener('touchstart', e => handleTouchStart(e, id), { passive: false });
+    tp.addEventListener('touchmove',  e => handleTouchMove(e),      { passive: false });
+    tp.addEventListener('touchend',   e => handleTouchEnd(e),       { passive: false });
+
+    // Tap-to-select (click fallback for mobile)
+    tp.addEventListener('click', () => selectPiece(id));
+
     document.getElementById('piece-tray').appendChild(tp);
 
     pieces.push({ id, row, col, placed: false, trayEl: tp, cellEl: cell });
@@ -614,20 +668,112 @@ function startGame() {
   updateProgress();
 }
 
-// ── Drop logic ────────────────────────────────────
-function dropOnCell(e, cellId) {
+// ── Tap-to-select / place (mobile) ────────────────
+function selectPiece(id) {
+  // Deselect if same
+  if (selectedPieceId === id) {
+    clearSelection();
+    return;
+  }
+  clearSelection();
+  selectedPieceId = id;
+  const piece = pieces.find(p => p.id === id);
+  if (piece) piece.trayEl.classList.add('selected');
+
+  // Highlight empty board cells
+  document.querySelectorAll('.puzzle-cell:not(.correct)').forEach(c => c.classList.add('highlight'));
+}
+
+function clearSelection() {
+  selectedPieceId = null;
+  pieces.forEach(p => p.trayEl.classList.remove('selected'));
+  document.querySelectorAll('.puzzle-cell').forEach(c => c.classList.remove('highlight'));
+}
+
+function tapOnCell(cellId) {
+  if (selectedPieceId === null) return;
+  // Simulate drop
+  dropOnCell({ preventDefault: () => {} }, cellId, selectedPieceId);
+  clearSelection();
+}
+
+// ── Touch drag (ghost follow finger) ──────────────
+let touchGhostCanvas = null;
+
+function handleTouchStart(e, id) {
+  e.preventDefault();
+  dragPieceId = id;
+  selectPiece(id);
+
+  const piece = pieces.find(p => p.id === id);
+  if (!piece) return;
+
+  // Create ghost
+  const ghost = document.getElementById('touch-ghost');
+  ghost.innerHTML = '';
+  const gc = piece.trayEl.querySelector('canvas').cloneNode();
+  gc.getContext('2d').drawImage(piece.trayEl.querySelector('canvas'), 0, 0);
+  ghost.appendChild(gc);
+  ghost.style.width  = pieceW + 'px';
+  ghost.style.height = pieceH + 'px';
+  ghost.style.display = 'block';
+
+  const t = e.touches[0];
+  ghost.style.left = (t.clientX - pieceW / 2) + 'px';
+  ghost.style.top  = (t.clientY - pieceH / 2) + 'px';
+}
+
+function handleTouchMove(e) {
   e.preventDefault();
   if (dragPieceId === null) return;
-  if (dragPieceId !== cellId) {
-    // Wrong cell — wiggle feedback
+  const t = e.touches[0];
+  const ghost = document.getElementById('touch-ghost');
+  ghost.style.left = (t.clientX - pieceW / 2) + 'px';
+  ghost.style.top  = (t.clientY - pieceH / 2) + 'px';
+
+  // Highlight cell under finger
+  document.querySelectorAll('.puzzle-cell').forEach(c => c.classList.remove('highlight'));
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const cell = el && el.closest('.puzzle-cell');
+  if (cell && !cell.classList.contains('correct')) cell.classList.add('highlight');
+}
+
+function handleTouchEnd(e) {
+  e.preventDefault();
+  const ghost = document.getElementById('touch-ghost');
+  ghost.style.display = 'none';
+
+  if (dragPieceId === null) return;
+
+  const t = e.changedTouches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const cell = el && el.closest('.puzzle-cell');
+
+  if (cell) {
+    const cellId = parseInt(cell.dataset.id);
+    dropOnCell({ preventDefault: () => {} }, cellId, dragPieceId);
+  }
+
+  dragPieceId = null;
+  clearSelection();
+}
+
+// ── Drop logic ────────────────────────────────────
+function dropOnCell(e, cellId, forcePieceId) {
+  e.preventDefault();
+  const pid = forcePieceId !== undefined ? forcePieceId : dragPieceId;
+  if (pid === null || pid === undefined) return;
+  if (pid !== cellId) {
+    // Wrong cell
     const cell = document.querySelector(`.puzzle-cell[data-id="${cellId}"]`);
-    cell.style.boxShadow = '0 0 12px rgba(233,69,96,0.7)';
-    setTimeout(() => cell.style.boxShadow = '', 500);
+    if (cell) {
+      cell.style.boxShadow = '0 0 12px rgba(233,69,96,0.7)';
+      setTimeout(() => cell.style.boxShadow = '', 500);
+    }
     return;
   }
 
-  // Correct!
-  const piece = pieces.find(p => p.id === dragPieceId);
+  const piece = pieces.find(p => p.id === pid);
   if (!piece || piece.placed) return;
 
   moves++;

@@ -6,548 +6,87 @@
 <title>직소 퍼즐</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --card: #0f3460;
-    --accent: #e94560;
-    --gold: #f5a623;
-    --teal: #00b4d8;
-    --green: #06d6a0;
-    --text: #eaeaea;
-    --muted: #8892b0;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Nunito', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Stars background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.15) 0%, transparent 100%),
-      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.1) 0%, transparent 100%),
-      radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.12) 0%, transparent 100%),
-      radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 100%),
-      radial-gradient(1px 1px at 50% 40%, rgba(255,255,255,0.1) 0%, transparent 100%),
-      radial-gradient(2px 2px at 90% 30%, rgba(255,255,255,0.06) 0%, transparent 100%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* ─── HEADER ─── */
-  header {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    padding: 36px 20px 20px;
-  }
-
-  header h1 {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(2rem, 5vw, 3.2rem);
-    background: linear-gradient(135deg, var(--gold), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: 1px;
-  }
-
-  .subtitle {
-    color: var(--muted);
-    font-size: 0.85rem;
-    margin-top: 6px;
-    letter-spacing: 1px;
-  }
-
-  /* ─── CONTROLS ─── */
-  .controls {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-  }
-
-  .btn {
-    font-family: 'Fredoka One', cursive;
-    font-size: 0.95rem;
-    letter-spacing: 0.5px;
-    padding: 10px 22px;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .btn:hover { transform: translateY(-2px); }
-  .btn:active { transform: translateY(0); }
-
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #c1121f);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(233,69,96,0.4);
-  }
-
-  .btn-secondary {
-    background: linear-gradient(135deg, var(--teal), #0077b6);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(0,180,216,0.3);
-  }
-
-  .btn-gold {
-    background: linear-gradient(135deg, var(--gold), #d4880a);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(245,166,35,0.3);
-  }
-
-  select {
-    font-family: 'Nunito', sans-serif;
-    font-size: 0.9rem;
-    padding: 10px 16px;
-    border-radius: 50px;
-    border: 2px solid rgba(255,255,255,0.1);
-    background: var(--card);
-    color: var(--text);
-    cursor: pointer;
-    outline: none;
-  }
-
-  .upload-btn {
-    font-family: 'Fredoka One', cursive;
-    font-size: 0.95rem;
-    padding: 10px 22px;
-    border-radius: 50px;
-    background: var(--card);
-    border: 2px dashed rgba(255,255,255,0.2);
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .upload-btn:hover { border-color: var(--gold); color: var(--gold); }
-
-  /* ─── STATS BAR ─── */
-  .stats {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    padding: 10px 20px 20px;
-    position: relative;
-    z-index: 10;
-  }
-
-  .stat {
-    text-align: center;
-  }
-
-  .stat-value {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.6rem;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-
-  /* ─── GAME AREA ─── */
-  .game-wrapper {
-    position: relative;
-    z-index: 5;
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 12px;
-    justify-content: center;
-    padding: 0 12px 40px;
-    max-width: 1200px;
-    margin: 0 auto;
-    align-items: flex-start;
-  }
-
-  /* Puzzle board */
-  .board-wrap {
-    flex: 1 1 0;
-    min-width: 0;
-    max-width: 520px;
-  }
-
-  .board-label {
-    font-family: 'Fredoka One', cursive;
-    font-size: 0.85rem;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    text-align: center;
-  }
-
-  #puzzle-board {
-    position: relative;
-    background: rgba(255,255,255,0.03);
-    border: 2px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: inset 0 2px 20px rgba(0,0,0,0.3);
-  }
-
-  /* Piece tray */
-  .tray-wrap {
-    flex: 0 0 auto;
-    width: 140px;
-  }
-
-  @media (min-width: 700px) {
-    .tray-wrap { width: 220px; }
-  }
-
-  #piece-tray {
-    background: rgba(255,255,255,0.03);
-    border: 2px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    padding: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-content: flex-start;
-    box-shadow: inset 0 2px 20px rgba(0,0,0,0.3);
-    /* 화면 높이에 맞게 스크롤 */
-    max-height: calc(100vh - 260px);
-    overflow-y: auto;
-  }
-
-  /* ─── PUZZLE PIECES ─── */
-  .puzzle-cell {
-    position: absolute;
-    border: 1px solid rgba(255,255,255,0.05);
-    transition: box-shadow 0.15s ease;
-    overflow: hidden;
-  }
-
-  .puzzle-cell.correct {
-    border-color: rgba(6,214,160,0.4);
-    box-shadow: 0 0 10px rgba(6,214,160,0.3);
-  }
-
-  .tray-piece {
-    cursor: grab;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid rgba(255,255,255,0.1);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .tray-piece:hover {
-    transform: scale(1.06) rotate(-1deg);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    border-color: var(--gold);
-    z-index: 10;
-  }
-
-  .tray-piece.dragging {
-    opacity: 0.5;
-    cursor: grabbing;
-  }
-
-  /* Mobile selected */
-  .tray-piece.selected {
-    border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(245,166,35,0.5), 0 8px 20px rgba(0,0,0,0.4);
-    transform: scale(1.08);
-    z-index: 10;
-  }
-
-  /* Touch ghost */
-  #touch-ghost {
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.8;
-    border-radius: 6px;
-    overflow: hidden;
-    display: none;
-    border: 2px solid var(--gold);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  }
-
-  .puzzle-cell.highlight {
-    box-shadow: inset 0 0 0 3px rgba(245,166,35,0.6) !important;
-  }
-
-  .mobile-tip {
-    display: none;
-    text-align: center;
-    font-size: 0.75rem;
-    color: var(--muted);
-    padding: 0 20px 8px;
-    position: relative;
-    z-index: 10;
-  }
-  @media (hover: none) { .mobile-tip { display: block; } }
-
-  .tray-piece canvas,
-  .puzzle-cell canvas {
-    display: block;
-  }
-
-  /* ─── HINT OVERLAY ─── */
-  #hint-overlay {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    z-index: 5;
-  }
-  #hint-overlay.show { opacity: 0.25; }
-
-  /* ─── SUCCESS SCREEN ─── */
-  .success-screen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(10,10,20,0.92);
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-    padding: 20px;
-  }
-  .success-screen.show { display: flex; }
-
-  .success-emoji {
-    font-size: 5rem;
-    animation: bounce 0.6s ease infinite alternate;
-  }
-
-  .success-title {
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(2rem, 6vw, 3.5rem);
-    background: linear-gradient(135deg, var(--gold), var(--green));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .success-stats {
-    color: var(--muted);
-    font-size: 1rem;
-    line-height: 1.8;
-  }
-
-  .success-stats span {
-    color: var(--text);
-    font-weight: 700;
-  }
-
-  /* ─── PROGRESS BAR ─── */
-  .progress-wrap {
-    position: relative;
-    z-index: 10;
-    max-width: 500px;
-    margin: 0 auto 16px;
-    padding: 0 20px;
-  }
-
-  .progress-bar {
-    height: 6px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--teal), var(--green));
-    border-radius: 10px;
-    transition: width 0.4s ease;
-    width: 0%;
-  }
-
-  .progress-text {
-    text-align: center;
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 6px;
-    letter-spacing: 1px;
-  }
-
-  /* ─── ANIMATIONS ─── */
-  @keyframes bounce {
-    from { transform: translateY(0); }
-    to   { transform: translateY(-12px); }
-  }
-
-  @keyframes popIn {
-    from { transform: scale(0.5); opacity: 0; }
-    to   { transform: scale(1); opacity: 1; }
-  }
-
-  /* ─── HISTORY ─── */
-  .history-section {
-    position: relative;
-    z-index: 10;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px 60px;
-  }
-
-  .history-title {
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.3rem;
-    color: var(--gold);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .history-title span {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-family: 'Nunito', sans-serif;
-    font-weight: 400;
-    letter-spacing: 1px;
-  }
-
-  .history-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-
-  .history-card {
-    background: var(--card);
-    border-radius: 14px;
-    overflow: hidden;
-    width: 160px;
-    border: 1px solid rgba(255,255,255,0.07);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .history-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 24px rgba(0,0,0,0.4);
-  }
-
-  .history-card canvas {
-    display: block;
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-  }
-
-  .history-info {
-    padding: 10px 12px;
-  }
-
-  .history-date {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.5px;
-  }
-
-  .history-meta {
-    font-size: 0.8rem;
-    color: var(--text);
-    margin-top: 4px;
-    font-weight: 600;
-  }
-
-  .history-badge {
-    display: inline-block;
-    background: rgba(6,214,160,0.15);
-    color: var(--green);
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    border-radius: 20px;
-    margin-top: 6px;
-    letter-spacing: 0.5px;
-  }
-
-  .history-empty {
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-style: italic;
-    padding: 10px 0;
-  }
-
-  .history-clear {
-    font-family: 'Nunito', sans-serif;
-    font-size: 0.75rem;
-    color: var(--muted);
-    background: none;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 4px 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-left: auto;
-  }
-  .history-clear:hover { color: var(--accent); border-color: var(--accent); }
-
-  /* saved image selector */
-  .saved-images {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 20px;
-    justify-content: center;
-    position: relative;
-    z-index: 10;
-  }
-
-  .saved-img-btn {
-    width: 52px;
-    height: 52px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 2px solid rgba(255,255,255,0.1);
-    cursor: pointer;
-    transition: border-color 0.2s, transform 0.2s;
-    padding: 0;
-    background: none;
-  }
-
-  .saved-img-btn:hover, .saved-img-btn.active {
-    border-color: var(--gold);
-    transform: scale(1.1);
-  }
-
-  .saved-img-btn canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
+:root{--bg:#1a1a2e;--card:#0f3460;--accent:#e94560;--gold:#f5a623;--teal:#00b4d8;--green:#06d6a0;--text:#eaeaea;--muted:#8892b0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(1px 1px at 15% 25%,rgba(255,255,255,.12) 0%,transparent 100%),radial-gradient(1px 1px at 70% 15%,rgba(255,255,255,.1) 0%,transparent 100%),radial-gradient(1px 1px at 40% 70%,rgba(255,255,255,.08) 0%,transparent 100%);pointer-events:none;z-index:0}
+header{position:relative;z-index:10;text-align:center;padding:30px 20px 14px}
+header h1{font-family:'Fredoka One',cursive;font-size:clamp(1.8rem,5vw,3rem);background:linear-gradient(135deg,var(--gold),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{color:var(--muted);font-size:.82rem;margin-top:5px;letter-spacing:1px}
+.controls{position:relative;z-index:10;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;padding:12px 16px}
+.btn{font-family:'Fredoka One',cursive;font-size:.9rem;padding:9px 20px;border:none;border-radius:50px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#c1121f);color:#fff;box-shadow:0 4px 14px rgba(233,69,96,.4)}
+.btn-secondary{background:linear-gradient(135deg,var(--teal),#0077b6);color:#fff;box-shadow:0 4px 14px rgba(0,180,216,.3)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#d4880a);color:#fff;box-shadow:0 4px 14px rgba(245,166,35,.3)}
+select{font-family:'Nunito',sans-serif;font-size:.88rem;padding:9px 14px;border-radius:50px;border:2px solid rgba(255,255,255,.1);background:var(--card);color:var(--text);cursor:pointer;outline:none}
+.upload-btn{font-family:'Fredoka One',cursive;font-size:.9rem;padding:9px 20px;border-radius:50px;background:var(--card);border:2px dashed rgba(255,255,255,.2);color:var(--muted);cursor:pointer;transition:all .2s}
+.upload-btn:hover{border-color:var(--gold);color:var(--gold)}
+.saved-wrap{position:relative;z-index:10;display:flex;flex-wrap:wrap;gap:8px;padding:6px 16px;justify-content:center}
+.saved-thumb{width:48px;height:48px;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.1);cursor:pointer;padding:0;background:none;transition:border-color .2s,transform .2s;flex-shrink:0}
+.saved-thumb:hover,.saved-thumb.active{border-color:var(--gold);transform:scale(1.1)}
+.saved-thumb canvas{display:block;width:100%;height:100%}
+.saved-del{width:auto;padding:0 12px;height:48px;border-radius:10px;background:rgba(233,69,96,.12);border:2px dashed rgba(233,69,96,.3);color:var(--accent);font-size:.7rem;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s}
+.saved-del:hover{background:rgba(233,69,96,.25)}
+.progress-wrap{position:relative;z-index:10;max-width:500px;margin:8px auto;padding:0 20px}
+.progress-bar{height:6px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:10px;transition:width .4s ease;width:0%}
+.progress-text{text-align:center;font-size:.72rem;color:var(--muted);margin-top:5px;letter-spacing:1px}
+.stats{display:flex;justify-content:center;gap:28px;padding:8px 20px 12px;position:relative;z-index:10}
+.stat{text-align:center}
+.stat-value{font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--gold);line-height:1}
+.stat-label{font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.mobile-tip{display:none;text-align:center;font-size:.72rem;color:var(--muted);padding:0 20px 8px;position:relative;z-index:10}
+@media(hover:none){.mobile-tip{display:block}}
+.game-wrapper{position:relative;z-index:5;display:flex;flex-wrap:nowrap;gap:12px;justify-content:center;padding:0 12px 30px;max-width:1200px;margin:0 auto;align-items:flex-start}
+.board-wrap{flex:1 1 0;min-width:0;max-width:520px}
+.board-label{font-family:'Fredoka One',cursive;font-size:.8rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;text-align:center}
+#puzzle-board{position:relative;background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;box-shadow:inset 0 2px 20px rgba(0,0,0,.3)}
+.tray-wrap{flex:0 0 auto;width:130px}
+@media(min-width:700px){.tray-wrap{width:210px}}
+#piece-tray{background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.07);border-radius:16px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;box-shadow:inset 0 2px 20px rgba(0,0,0,.3);max-height:calc(100vh - 280px);overflow-y:auto}
+.puzzle-cell{position:absolute;border:1px solid rgba(255,255,255,.05);transition:box-shadow .15s;overflow:hidden}
+.puzzle-cell.correct{border-color:rgba(6,214,160,.4);box-shadow:0 0 10px rgba(6,214,160,.3)}
+.puzzle-cell.highlight{box-shadow:inset 0 0 0 3px rgba(245,166,35,.6)!important}
+#hint-overlay{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;z-index:5}
+#hint-overlay.show{opacity:.25}
+.tray-piece{cursor:grab;border-radius:6px;overflow:hidden;border:2px solid rgba(255,255,255,.1);transition:transform .15s,box-shadow .15s,border-color .15s;position:relative;flex-shrink:0}
+.tray-piece:hover{transform:scale(1.06) rotate(-1deg);box-shadow:0 8px 20px rgba(0,0,0,.4);border-color:var(--gold);z-index:10}
+.tray-piece.selected{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,166,35,.5);transform:scale(1.08);z-index:10}
+.tray-piece.dragging{opacity:.5;cursor:grabbing}
+#touch-ghost{position:fixed;pointer-events:none;z-index:9999;opacity:.8;border-radius:6px;overflow:hidden;display:none;border:2px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.success-screen{display:none;position:fixed;inset:0;z-index:1000;background:rgba(10,10,20,.92);align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:20px}
+.success-screen.show{display:flex}
+.success-emoji{font-size:4.5rem;animation:bounce .6s ease infinite alternate}
+.success-title{font-family:'Fredoka One',cursive;font-size:clamp(2rem,6vw,3.2rem);background:linear-gradient(135deg,var(--gold),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.success-stats{color:var(--muted);font-size:.95rem;line-height:1.9}
+.success-stats span{color:var(--text);font-weight:700}
+.history-section{position:relative;z-index:10;max-width:1200px;margin:0 auto;padding:10px 20px 60px}
+.history-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.history-title{font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--gold)}
+.history-count{font-size:.72rem;color:var(--muted);letter-spacing:1px}
+.history-clear{font-size:.72rem;color:var(--muted);background:none;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:4px 12px;cursor:pointer;transition:all .2s;margin-left:auto;font-family:'Nunito',sans-serif}
+.history-clear:hover{color:var(--accent);border-color:var(--accent)}
+.history-grid{display:flex;flex-wrap:wrap;gap:12px}
+.history-card{background:var(--card);border-radius:12px;overflow:hidden;width:150px;border:1px solid rgba(255,255,255,.07);transition:transform .2s,box-shadow .2s}
+.history-card:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,.4)}
+.history-info{padding:8px 10px}
+.history-date{font-size:.65rem;color:var(--muted)}
+.history-meta{font-size:.75rem;color:var(--text);margin-top:3px;font-weight:600}
+.history-badge{display:inline-block;background:rgba(6,214,160,.15);color:var(--green);font-size:.6rem;padding:2px 7px;border-radius:20px;margin-top:5px}
+.history-empty{color:var(--muted);font-size:.88rem;font-style:italic}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+@keyframes popIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.pop{animation:popIn .3s cubic-bezier(.34,1.56,.64,1) forwards}
+</style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
   <h1>🧩 직소 퍼즐</h1>
   <p class="subtitle">조각을 맞춰 그림을 완성하세요!</p>
 </header>
 
-<!-- CONTROLS -->
 <div class="controls">
   <select id="difficulty">
     <option value="3">쉬움 (3×3)</option>
@@ -558,32 +97,27 @@
   <button class="btn btn-primary" onclick="startGame()">🎮 새 게임</button>
   <button class="btn btn-secondary" onclick="toggleHint()">💡 힌트</button>
   <button class="btn btn-gold" onclick="shuffleTray()">🔀 섞기</button>
-  <label class="upload-btn">📷 사진 올리기 <input type="file" accept="image/*" style="display:none" onchange="loadImage(event)"/></label>
+  <label class="upload-btn">📷 사진 올리기
+    <input type="file" accept="image/*" style="display:none" onchange="onFileLoad(event)"/>
+  </label>
 </div>
 
-<!-- PROGRESS -->
+<div class="saved-wrap" id="saved-wrap"></div>
+
 <div class="progress-wrap">
   <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
   <div class="progress-text" id="progress-text">게임을 시작하세요!</div>
 </div>
 
-<!-- MOBILE TIP -->
-<div class="mobile-tip">💡 조각을 탭해서 선택 → 보드의 빈칸을 탭해서 놓기</div>
-
-<!-- TOUCH GHOST -->
-<div id="touch-ghost"></div>
-
-<!-- STATS -->
 <div class="stats">
-  <div class="stat"><div class="stat-value" id="stat-moves">0</div><div class="stat-label">이동 횟수</div></div>
+  <div class="stat"><div class="stat-value" id="stat-moves">0</div><div class="stat-label">이동</div></div>
   <div class="stat"><div class="stat-value" id="stat-time">0:00</div><div class="stat-label">시간</div></div>
-  <div class="stat"><div class="stat-value" id="stat-left">-</div><div class="stat-label">남은 조각</div></div>
+  <div class="stat"><div class="stat-value" id="stat-left">-</div><div class="stat-label">남은</div></div>
 </div>
 
-<!-- SAVED IMAGES -->
-<div class="saved-images" id="saved-images"></div>
+<div class="mobile-tip">💡 조각 탭 → 선택 → 보드 빈칸 탭</div>
+<div id="touch-ghost"></div>
 
-<!-- GAME -->
 <div class="game-wrapper">
   <div class="board-wrap">
     <div class="board-label">퍼즐 보드</div>
@@ -597,19 +131,17 @@
   </div>
 </div>
 
-<!-- SUCCESS -->
 <div class="success-screen" id="success-screen">
   <div class="success-emoji">🎉</div>
   <div class="success-title">완성!</div>
   <div class="success-stats" id="success-stats"></div>
-  <button class="btn btn-primary" onclick="startGame(); document.getElementById('success-screen').classList.remove('show')">다시 하기</button>
+  <button class="btn btn-primary" onclick="document.getElementById('success-screen').classList.remove('show');startGame()">다시 하기</button>
 </div>
 
-<!-- HISTORY -->
 <div class="history-section">
-  <div class="history-title">
-    🏆 완성 기록
-    <span id="history-count"></span>
+  <div class="history-header">
+    <div class="history-title">🏆 완성 기록</div>
+    <div class="history-count" id="history-count"></div>
     <button class="history-clear" onclick="clearHistory()">기록 삭제</button>
   </div>
   <div class="history-grid" id="history-grid">
@@ -618,326 +150,253 @@
 </div>
 
 <script>
-// ── IndexedDB ──────────────────────────────────────
-const DB_NAME = 'jigsaw_db', DB_VER = 1;
-let db;
+// ── IndexedDB ─────────────────────────────────────────
+var DB_NAME = 'jigsaw_v3', DB_VER = 1, db = null;
 
 function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VER);
-    req.onupgradeneeded = e => {
-      const d = e.target.result;
+  return new Promise(function(resolve, reject) {
+    var req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = function(e) {
+      var d = e.target.result;
       if (!d.objectStoreNames.contains('images'))
         d.createObjectStore('images', { keyPath: 'id', autoIncrement: true });
       if (!d.objectStoreNames.contains('history'))
         d.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
     };
-    req.onsuccess = e => { db = e.target.result; resolve(db); };
-    req.onerror   = () => reject(req.error);
+    req.onsuccess = function(e) { db = e.target.result; resolve(); };
+    req.onerror = function() { reject(req.error); };
   });
 }
-
-function dbGetAll(store) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, 'readonly');
-    const req = tx.objectStore(store).getAll();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror   = () => reject(req.error);
+function dbAll(store) {
+  return new Promise(function(res, rej) {
+    var req = db.transaction(store, 'readonly').objectStore(store).getAll();
+    req.onsuccess = function() { res(req.result); };
+    req.onerror = function() { rej(req.error); };
   });
 }
-
 function dbAdd(store, data) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).add(data);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror   = () => reject(req.error);
+  return new Promise(function(res, rej) {
+    var req = db.transaction(store, 'readwrite').objectStore(store).add(data);
+    req.onsuccess = function() { res(req.result); };
+    req.onerror = function() { rej(req.error); };
   });
 }
-
+function dbDel(store, key) {
+  return new Promise(function(res, rej) {
+    var req = db.transaction(store, 'readwrite').objectStore(store).delete(key);
+    req.onsuccess = function() { res(); };
+    req.onerror = function() { rej(req.error); };
+  });
+}
 function dbClear(store) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).clear();
-    req.onsuccess = () => resolve();
-    req.onerror   = () => reject(req.error);
+  return new Promise(function(res, rej) {
+    var req = db.transaction(store, 'readwrite').objectStore(store).clear();
+    req.onsuccess = function() { res(); };
+    req.onerror = function() { rej(req.error); };
   });
 }
 
-// ── State ──────────────────────────────────────────
-let grid = 4;
-let pieceW, pieceH, boardW, boardH;
-let totalPieces;
-let correctCount = 0;
-let moves = 0;
-let seconds = 0;
-let timerInterval = null;
-let hintVisible = false;
-let dragPieceId = null;
-let selectedPieceId = null;
-let pieces = [];
-let sourceImage = null;
-let savedImages = []; // { id, dataUrl }
+// ── State ─────────────────────────────────────────────
+var grid = 4, pieceW, pieceH, boardW, boardH, totalPieces;
+var correctCount = 0, moves = 0, seconds = 0;
+var timerInterval = null, hintVisible = false;
+var dragPieceId = null, selectedPieceId = null;
+var pieces = [], sourceImage = null, savedImages = [];
 
-// ── Init ────────────────────────────────────────────
-window.onload = async () => {
-  await openDB();
-  await loadSavedImages();
-  await loadHistory();
-  if (savedImages.length > 0) {
-    await selectSavedImage(savedImages[0]);
-  } else {
-    sourceImage = await createDefaultImage();
-    startGame();
-  }
-};
+// ── Boot ──────────────────────────────────────────────
+window.addEventListener('load', function() {
+  openDB().then(function() {
+    return Promise.all([dbAll('images'), dbAll('history')]);
+  }).then(function(results) {
+    savedImages = results[0];
+    renderSaved();
+    renderHistory(results[1].slice().reverse());
+    if (savedImages.length > 0) {
+      loadDataUrl(savedImages[savedImages.length - 1].dataUrl);
+    } else {
+      makeDefaultImage(function(img) { sourceImage = img; startGame(); });
+    }
+  }).catch(function(err) {
+    console.error('DB error:', err);
+    makeDefaultImage(function(img) { sourceImage = img; startGame(); });
+  });
+});
 
-// ── Saved images ──────────────────────────────────
-async function loadSavedImages() {
-  savedImages = await dbGetAll('images');
-  renderSavedImages();
-}
-
-function renderSavedImages() {
-  const wrap = document.getElementById('saved-images');
+// ── Saved images ──────────────────────────────────────
+function renderSaved() {
+  var wrap = document.getElementById('saved-wrap');
   wrap.innerHTML = '';
-  savedImages.forEach(img => {
-    const btn = document.createElement('button');
-    btn.className = 'saved-img-btn';
-    btn.title = '이 사진으로 퍼즐 시작';
-
-    const c = document.createElement('canvas');
-    c.width = 52; c.height = 52;
-    const image = new Image();
-    image.onload = () => {
-      c.getContext('2d').drawImage(image, 0, 0, 52, 52);
+  savedImages.forEach(function(rec, i) {
+    var btn = document.createElement('button');
+    btn.className = 'saved-thumb' + (i === savedImages.length - 1 ? ' active' : '');
+    var cv = document.createElement('canvas');
+    cv.width = 48; cv.height = 48;
+    var im = new Image();
+    im.onload = function() { cv.getContext('2d').drawImage(im, 0, 0, 48, 48); };
+    im.src = rec.dataUrl;
+    btn.appendChild(cv);
+    btn.onclick = function() {
+      document.querySelectorAll('.saved-thumb').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      loadDataUrl(rec.dataUrl);
     };
-    image.src = img.dataUrl;
-    btn.appendChild(c);
-    btn.onclick = () => selectSavedImage(img);
     wrap.appendChild(btn);
   });
+  if (savedImages.length > 0) {
+    var del = document.createElement('button');
+    del.className = 'saved-del';
+    del.textContent = '사진 삭제';
+    del.onclick = function() {
+      if (!confirm('저장된 사진을 모두 삭제할까요?')) return;
+      dbClear('images').then(function() {
+        savedImages = [];
+        renderSaved();
+        makeDefaultImage(function(img) { sourceImage = img; startGame(); });
+      });
+    };
+    wrap.appendChild(del);
+  }
 }
 
-async function selectSavedImage(imgRecord) {
-  document.querySelectorAll('.saved-img-btn').forEach(b => b.classList.remove('active'));
-  const img = new Image();
-  img.onload = () => { sourceImage = img; startGame(); };
-  img.src = imgRecord.dataUrl;
-}
-
-// ── Load custom image ──────────────────────────────
-function loadImage(e) {
-  const file = e.target.files[0];
+function onFileLoad(e) {
+  var file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const dataUrl = ev.target.result;
-
-    // 중복 방지: 이미 10장이면 가장 오래된 것 삭제
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var dataUrl = ev.target.result;
+    var next = function() {
+      dbAdd('images', { dataUrl: dataUrl }).then(function(newId) {
+        savedImages.push({ id: newId, dataUrl: dataUrl });
+        renderSaved();
+        loadDataUrl(dataUrl);
+      });
+    };
     if (savedImages.length >= 10) {
-      const tx = db.transaction('images', 'readwrite');
-      tx.objectStore('images').delete(savedImages[0].id);
-      savedImages.shift();
+      dbDel('images', savedImages[0].id).then(function() {
+        savedImages.shift();
+        next();
+      });
+    } else {
+      next();
     }
-
-    const id = await dbAdd('images', { dataUrl });
-    savedImages.push({ id, dataUrl });
-    renderSavedImages();
-
-    const img = new Image();
-    img.onload = () => { sourceImage = img; startGame(); };
-    img.src = dataUrl;
   };
   reader.readAsDataURL(file);
 }
 
-// ── Default image ──────────────────────────────────
-function createDefaultImage() {
-  return new Promise(resolve => {
-    const c = document.createElement('canvas');
-    c.width = 480; c.height = 480;
-    const ctx = c.getContext('2d');
-    const grad = ctx.createLinearGradient(0, 0, 480, 480);
-    grad.addColorStop(0, '#e94560');
-    grad.addColorStop(0.33, '#f5a623');
-    grad.addColorStop(0.66, '#00b4d8');
-    grad.addColorStop(1, '#06d6a0');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 480, 480);
-    const shapes = [
-      { x: 120, y: 120, r: 80, color: 'rgba(255,255,255,0.15)' },
-      { x: 360, y: 150, r: 60, color: 'rgba(255,255,255,0.1)'  },
-      { x: 240, y: 300, r: 100,color: 'rgba(0,0,0,0.1)'        },
-      { x: 80,  y: 360, r: 50, color: 'rgba(255,255,255,0.12)' },
-      { x: 400, y: 360, r: 70, color: 'rgba(255,255,255,0.08)' },
-    ];
-    shapes.forEach(s => {
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-      ctx.fillStyle = s.color; ctx.fill();
-    });
-    ctx.font = 'bold 60px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    [['🌟',120,120],['🎨',360,120],['🌈',240,240],['🦋',120,360],['🌸',360,360]]
-      .forEach(([e,x,y]) => ctx.fillText(e, x, y));
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = c.toDataURL();
-  });
+function loadDataUrl(dataUrl) {
+  var img = new Image();
+  img.onload = function() { sourceImage = img; startGame(); };
+  img.src = dataUrl;
 }
 
-// ── Start Game ─────────────────────────────────────
+function makeDefaultImage(cb) {
+  var cv = document.createElement('canvas');
+  cv.width = 480; cv.height = 480;
+  var ctx = cv.getContext('2d');
+  var g = ctx.createLinearGradient(0, 0, 480, 480);
+  g.addColorStop(0, '#e94560'); g.addColorStop(.33, '#f5a623');
+  g.addColorStop(.66, '#00b4d8'); g.addColorStop(1, '#06d6a0');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 480, 480);
+  [[120,120,80,'rgba(255,255,255,.15)'],[360,150,60,'rgba(255,255,255,.1)'],
+   [240,300,100,'rgba(0,0,0,.1)'],[80,360,50,'rgba(255,255,255,.12)'],
+   [400,360,70,'rgba(255,255,255,.08)']].forEach(function(s) {
+    ctx.beginPath(); ctx.arc(s[0],s[1],s[2],0,Math.PI*2); ctx.fillStyle=s[3]; ctx.fill();
+  });
+  ctx.font = '60px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  [['🌟',120,120],['🎨',360,120],['🌈',240,240],['🦋',120,360],['🌸',360,360]]
+    .forEach(function(em) { ctx.fillText(em[0], em[1], em[2]); });
+  var im = new Image();
+  im.onload = function() { cb(im); };
+  im.src = cv.toDataURL();
+}
+
+// ── Start Game ────────────────────────────────────────
 function startGame() {
+  if (!sourceImage) return;
   grid = parseInt(document.getElementById('difficulty').value);
   totalPieces = grid * grid;
   correctCount = 0; moves = 0; pieces = [];
-
   clearInterval(timerInterval);
   seconds = 0; updateTimer();
-  timerInterval = setInterval(() => { seconds++; updateTimer(); }, 1000);
+  timerInterval = setInterval(function() { seconds++; updateTimer(); }, 1000);
   updateStats();
 
-  const boardEl = document.getElementById('puzzle-board');
-  const trayW = window.innerWidth >= 700 ? 220 : 140;
-  const gapPad = 36;
-  const available = Math.min(window.innerWidth - trayW - gapPad, 500);
-  const maxW = Math.max(available, 160);
-  boardW = maxW; boardH = maxW;
+  var boardEl = document.getElementById('puzzle-board');
+  var tW = window.innerWidth >= 700 ? 210 : 130;
+  var avail = Math.min(window.innerWidth - tW - 40, 500);
+  boardW = Math.max(avail, 150); boardH = boardW;
   pieceW = Math.floor(boardW / grid); pieceH = Math.floor(boardH / grid);
   boardW = pieceW * grid; boardH = pieceH * grid;
   boardEl.style.width = boardW + 'px'; boardEl.style.height = boardH + 'px';
 
-  const hint = document.getElementById('hint-overlay');
+  var hint = document.getElementById('hint-overlay');
   hint.width = boardW; hint.height = boardH;
   hint.style.width = boardW + 'px'; hint.style.height = boardH + 'px';
   hint.getContext('2d').drawImage(sourceImage, 0, 0, boardW, boardH);
   if (hintVisible) { hintVisible = false; hint.classList.remove('show'); }
 
-  boardEl.querySelectorAll('.puzzle-cell').forEach(c => c.remove());
-  const order = shuffleArray([...Array(totalPieces).keys()]);
+  boardEl.querySelectorAll('.puzzle-cell').forEach(function(c) { c.remove(); });
+  document.getElementById('piece-tray').innerHTML = '';
 
-  order.forEach((id, trayIdx) => {
-    const row = Math.floor(id / grid), col = id % grid;
-    const pc = document.createElement('canvas');
+  var order = shuffleArr(Array.from({length: totalPieces}, function(_, i) { return i; }));
+  order.forEach(function(id, idx) {
+    var row = Math.floor(id / grid), col = id % grid;
+    var pc = document.createElement('canvas');
     pc.width = pieceW; pc.height = pieceH;
     pc.getContext('2d').drawImage(sourceImage,
-      col*(sourceImage.width/grid), row*(sourceImage.height/grid),
-      sourceImage.width/grid, sourceImage.height/grid, 0, 0, pieceW, pieceH);
+      col * sourceImage.width / grid, row * sourceImage.height / grid,
+      sourceImage.width / grid, sourceImage.height / grid,
+      0, 0, pieceW, pieceH);
 
-    const cell = document.createElement('div');
+    var cell = document.createElement('div');
     cell.className = 'puzzle-cell';
-    cell.style.cssText = `left:${col*pieceW}px;top:${row*pieceH}px;width:${pieceW}px;height:${pieceH}px;`;
+    cell.style.cssText = 'left:' + (col*pieceW) + 'px;top:' + (row*pieceH) + 'px;width:' + pieceW + 'px;height:' + pieceH + 'px;';
     cell.dataset.id = id;
-    cell.addEventListener('dragover', e => e.preventDefault());
-    cell.addEventListener('drop', e => dropOnCell(e, id));
-    cell.addEventListener('click', () => tapOnCell(id));
+    cell.addEventListener('dragover', function(ev) { ev.preventDefault(); });
+    cell.addEventListener('drop', (function(cid) { return function(ev) { onDrop(ev, cid); }; })(id));
+    cell.addEventListener('click', (function(cid) { return function() { onCellClick(cid); }; })(id));
     boardEl.appendChild(cell);
 
-    const tp = document.createElement('div');
+    var tp = document.createElement('div');
     tp.className = 'tray-piece pop';
     tp.draggable = true;
     tp.dataset.id = id;
-    tp.style.animationDelay = (trayIdx * 30) + 'ms';
-    const tpc = pc.cloneNode();
+    tp.style.animationDelay = (idx * 25) + 'ms';
+    var tpc = pc.cloneNode();
     tpc.getContext('2d').drawImage(pc, 0, 0);
     tp.appendChild(tpc);
 
-    tp.addEventListener('dragstart', e => { dragPieceId = id; setTimeout(() => tp.classList.add('dragging'), 0); });
-    tp.addEventListener('dragend', () => { tp.classList.remove('dragging'); dragPieceId = null; });
-    tp.addEventListener('touchstart', e => handleTouchStart(e, id), { passive: false });
-    tp.addEventListener('touchmove',  e => handleTouchMove(e),      { passive: false });
-    tp.addEventListener('touchend',   e => handleTouchEnd(e),       { passive: false });
-    tp.addEventListener('click', () => selectPiece(id));
+    tp.addEventListener('dragstart', (function(pid, el) { return function() { dragPieceId = pid; setTimeout(function() { el.classList.add('dragging'); }, 0); }; })(id, tp));
+    tp.addEventListener('dragend', (function(el) { return function() { el.classList.remove('dragging'); dragPieceId = null; }; })(tp));
+    tp.addEventListener('touchstart', (function(pid) { return function(ev) { onTouchStart(ev, pid); }; })(id), { passive: false });
+    tp.addEventListener('touchmove', onTouchMove, { passive: false });
+    tp.addEventListener('touchend', onTouchEnd, { passive: false });
+    tp.addEventListener('click', (function(pid) { return function() { onPieceClick(pid); }; })(id));
 
     document.getElementById('piece-tray').appendChild(tp);
-    pieces.push({ id, row, col, placed: false, trayEl: tp, cellEl: cell });
+    pieces.push({ id: id, row: row, col: col, placed: false, trayEl: tp, cellEl: cell });
   });
 
-  const tray = document.getElementById('piece-tray');
-  tray.innerHTML = '';
-  pieces.forEach(p => tray.appendChild(p.trayEl));
   updateProgress();
 }
 
-// ── Tap select ────────────────────────────────────
-function selectPiece(id) {
-  if (selectedPieceId === id) { clearSelection(); return; }
-  clearSelection();
-  selectedPieceId = id;
-  const piece = pieces.find(p => p.id === id);
-  if (piece) piece.trayEl.classList.add('selected');
-  document.querySelectorAll('.puzzle-cell:not(.correct)').forEach(c => c.classList.add('highlight'));
-}
-
-function clearSelection() {
-  selectedPieceId = null;
-  pieces.forEach(p => p.trayEl.classList.remove('selected'));
-  document.querySelectorAll('.puzzle-cell').forEach(c => c.classList.remove('highlight'));
-}
-
-function tapOnCell(cellId) {
-  if (selectedPieceId === null) return;
-  dropOnCell({ preventDefault: () => {} }, cellId, selectedPieceId);
-  clearSelection();
-}
-
-// ── Touch drag ────────────────────────────────────
-function handleTouchStart(e, id) {
-  e.preventDefault();
-  dragPieceId = id; selectPiece(id);
-  const piece = pieces.find(p => p.id === id);
-  if (!piece) return;
-  const ghost = document.getElementById('touch-ghost');
-  ghost.innerHTML = '';
-  const gc = piece.trayEl.querySelector('canvas').cloneNode();
-  gc.getContext('2d').drawImage(piece.trayEl.querySelector('canvas'), 0, 0);
-  ghost.appendChild(gc);
-  ghost.style.width = pieceW + 'px'; ghost.style.height = pieceH + 'px'; ghost.style.display = 'block';
-  const t = e.touches[0];
-  ghost.style.left = (t.clientX - pieceW/2) + 'px'; ghost.style.top = (t.clientY - pieceH/2) + 'px';
-}
-
-function handleTouchMove(e) {
-  e.preventDefault();
-  if (dragPieceId === null) return;
-  const t = e.touches[0];
-  const ghost = document.getElementById('touch-ghost');
-  ghost.style.left = (t.clientX - pieceW/2) + 'px'; ghost.style.top = (t.clientY - pieceH/2) + 'px';
-  document.querySelectorAll('.puzzle-cell').forEach(c => c.classList.remove('highlight'));
-  const el = document.elementFromPoint(t.clientX, t.clientY);
-  const cell = el && el.closest('.puzzle-cell');
-  if (cell && !cell.classList.contains('correct')) cell.classList.add('highlight');
-}
-
-function handleTouchEnd(e) {
-  e.preventDefault();
-  document.getElementById('touch-ghost').style.display = 'none';
-  if (dragPieceId === null) return;
-  const t = e.changedTouches[0];
-  const el = document.elementFromPoint(t.clientX, t.clientY);
-  const cell = el && el.closest('.puzzle-cell');
-  if (cell) dropOnCell({ preventDefault: () => {} }, parseInt(cell.dataset.id), dragPieceId);
-  dragPieceId = null; clearSelection();
-}
-
-// ── Drop ──────────────────────────────────────────
-function dropOnCell(e, cellId, forcePieceId) {
-  e.preventDefault();
-  const pid = forcePieceId !== undefined ? forcePieceId : dragPieceId;
+// ── Place piece ───────────────────────────────────────
+function placePiece(pid, cellId) {
   if (pid === null || pid === undefined) return;
   if (pid !== cellId) {
-    const cell = document.querySelector(`.puzzle-cell[data-id="${cellId}"]`);
-    if (cell) { cell.style.boxShadow = '0 0 12px rgba(233,69,96,0.7)'; setTimeout(() => cell.style.boxShadow = '', 500); }
+    var cell = document.querySelector('.puzzle-cell[data-id="' + cellId + '"]');
+    if (cell) { cell.style.boxShadow = '0 0 14px rgba(233,69,96,.8)'; setTimeout(function() { cell.style.boxShadow = ''; }, 500); }
     return;
   }
-  const piece = pieces.find(p => p.id === pid);
+  var piece = pieces.find(function(p) { return p.id === pid; });
   if (!piece || piece.placed) return;
   moves++; correctCount++; piece.placed = true;
 
-  const pc = document.createElement('canvas');
+  var pc = document.createElement('canvas');
   pc.width = pieceW; pc.height = pieceH;
   pc.getContext('2d').drawImage(sourceImage,
-    piece.col*(sourceImage.width/grid), piece.row*(sourceImage.height/grid),
-    sourceImage.width/grid, sourceImage.height/grid, 0, 0, pieceW, pieceH);
+    piece.col * sourceImage.width / grid, piece.row * sourceImage.height / grid,
+    sourceImage.width / grid, sourceImage.height / grid, 0, 0, pieceW, pieceH);
   piece.cellEl.appendChild(pc);
   piece.cellEl.classList.add('correct');
   piece.trayEl.remove();
@@ -945,122 +404,142 @@ function dropOnCell(e, cellId, forcePieceId) {
 
   if (correctCount === totalPieces) {
     clearInterval(timerInterval);
-    setTimeout(() => { saveHistory(); showSuccess(); }, 600);
+    setTimeout(function() { doSaveHistory(); showSuccess(); }, 500);
   }
 }
 
-// ── History ───────────────────────────────────────
-async function saveHistory() {
-  // 완성된 보드를 캡처
-  const canvas = document.createElement('canvas');
-  canvas.width = boardW; canvas.height = boardH;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(sourceImage, 0, 0, boardW, boardH);
+function onDrop(ev, cellId) { ev.preventDefault(); placePiece(dragPieceId, cellId); }
+function onCellClick(cellId) { if (selectedPieceId === null) return; placePiece(selectedPieceId, cellId); clearSel(); }
 
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-  const record = {
-    dataUrl: canvas.toDataURL('image/jpeg', 0.6),
-    date: dateStr,
-    grid,
-    moves,
-    seconds
-  };
-  await dbAdd('history', record);
-  await loadHistory();
+function onPieceClick(id) {
+  if (selectedPieceId === id) { clearSel(); return; }
+  clearSel();
+  selectedPieceId = id;
+  var p = pieces.find(function(x) { return x.id === id; });
+  if (p) p.trayEl.classList.add('selected');
+  document.querySelectorAll('.puzzle-cell:not(.correct)').forEach(function(c) { c.classList.add('highlight'); });
+}
+function clearSel() {
+  selectedPieceId = null;
+  pieces.forEach(function(p) { p.trayEl.classList.remove('selected'); });
+  document.querySelectorAll('.puzzle-cell').forEach(function(c) { c.classList.remove('highlight'); });
 }
 
-async function loadHistory() {
-  const records = await dbGetAll('history');
-  renderHistory(records.reverse()); // 최신순
+// ── Touch ─────────────────────────────────────────────
+function onTouchStart(ev, id) {
+  ev.preventDefault();
+  dragPieceId = id; onPieceClick(id);
+  var p = pieces.find(function(x) { return x.id === id; });
+  if (!p) return;
+  var ghost = document.getElementById('touch-ghost');
+  ghost.innerHTML = '';
+  var gc = p.trayEl.querySelector('canvas').cloneNode();
+  gc.getContext('2d').drawImage(p.trayEl.querySelector('canvas'), 0, 0);
+  ghost.appendChild(gc);
+  ghost.style.width = pieceW + 'px'; ghost.style.height = pieceH + 'px'; ghost.style.display = 'block';
+  var t = ev.touches[0];
+  ghost.style.left = (t.clientX - pieceW/2) + 'px'; ghost.style.top = (t.clientY - pieceH/2) + 'px';
+}
+function onTouchMove(ev) {
+  ev.preventDefault();
+  if (dragPieceId === null) return;
+  var t = ev.touches[0];
+  var ghost = document.getElementById('touch-ghost');
+  ghost.style.left = (t.clientX - pieceW/2) + 'px'; ghost.style.top = (t.clientY - pieceH/2) + 'px';
+  document.querySelectorAll('.puzzle-cell').forEach(function(c) { c.classList.remove('highlight'); });
+  var el = document.elementFromPoint(t.clientX, t.clientY);
+  var cell = el && el.closest('.puzzle-cell');
+  if (cell && !cell.classList.contains('correct')) cell.classList.add('highlight');
+}
+function onTouchEnd(ev) {
+  ev.preventDefault();
+  document.getElementById('touch-ghost').style.display = 'none';
+  if (dragPieceId === null) return;
+  var t = ev.changedTouches[0];
+  var el = document.elementFromPoint(t.clientX, t.clientY);
+  var cell = el && el.closest('.puzzle-cell');
+  if (cell) placePiece(dragPieceId, parseInt(cell.dataset.id));
+  dragPieceId = null; clearSel();
 }
 
-function renderHistory(records) {
-  const grid_el = document.getElementById('history-grid');
-  const count_el = document.getElementById('history-count');
-  count_el.textContent = records.length > 0 ? `${records.length}개` : '';
+// ── Hint / Shuffle ────────────────────────────────────
+function toggleHint() { hintVisible = !hintVisible; document.getElementById('hint-overlay').classList.toggle('show', hintVisible); }
+function shuffleTray() { var tray = document.getElementById('piece-tray'); shuffleArr(Array.from(tray.children)).forEach(function(c) { tray.appendChild(c); }); }
 
-  if (records.length === 0) {
-    grid_el.innerHTML = '<div class="history-empty">아직 완성한 퍼즐이 없어요!</div>';
-    return;
-  }
-
-  grid_el.innerHTML = '';
-  records.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'history-card';
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 160; canvas.height = 120;
-    const img = new Image();
-    img.onload = () => canvas.getContext('2d').drawImage(img, 0, 0, 160, 120);
-    img.src = r.dataUrl;
-
-    const m = Math.floor(r.seconds/60), s = r.seconds%60;
-    card.innerHTML = `
-      <div class="history-info">
-        <div class="history-date">${r.date}</div>
-        <div class="history-meta">${r.grid}×${r.grid} · ${r.moves}번 · ${m}분${s}초</div>
-        <div class="history-badge">✅ 완성</div>
-      </div>`;
-    card.insertBefore(canvas, card.firstChild);
-    grid_el.appendChild(card);
-  });
-}
-
-async function clearHistory() {
-  if (!confirm('완성 기록을 모두 삭제할까요?')) return;
-  await dbClear('history');
-  await loadHistory();
-}
-
-// ── Hint ──────────────────────────────────────────
-function toggleHint() {
-  hintVisible = !hintVisible;
-  document.getElementById('hint-overlay').classList.toggle('show', hintVisible);
-}
-
-// ── Shuffle ───────────────────────────────────────
-function shuffleTray() {
-  const tray = document.getElementById('piece-tray');
-  shuffleArray(Array.from(tray.children)).forEach(c => tray.appendChild(c));
-}
-
-// ── Stats ─────────────────────────────────────────
+// ── Stats ─────────────────────────────────────────────
 function updateStats() {
   document.getElementById('stat-moves').textContent = moves;
-  document.getElementById('stat-left').textContent  = totalPieces - correctCount;
+  document.getElementById('stat-left').textContent = totalPieces - correctCount;
 }
 function updateTimer() {
-  const m = Math.floor(seconds/60), s = seconds%60;
-  document.getElementById('stat-time').textContent = m + ':' + String(s).padStart(2,'0');
+  var m = Math.floor(seconds/60), s = seconds%60;
+  document.getElementById('stat-time').textContent = m + ':' + (s < 10 ? '0' : '') + s;
 }
 function updateProgress() {
-  const pct = Math.round((correctCount/totalPieces)*100);
+  var pct = Math.round((correctCount/totalPieces)*100);
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('progress-text').textContent =
     correctCount === 0 ? '게임을 시작하세요!' :
     correctCount === totalPieces ? '완성! 🎉' :
-    `${correctCount} / ${totalPieces} 조각 완료 (${pct}%)`;
+    correctCount + ' / ' + totalPieces + ' 조각 완료 (' + pct + '%)';
 }
-
 function showSuccess() {
-  const m = Math.floor(seconds/60), s = seconds%60;
+  var m = Math.floor(seconds/60), s = seconds%60;
   document.getElementById('success-stats').innerHTML =
-    `⏱ 완료 시간: <span>${m}분 ${s}초</span><br>🖱 이동 횟수: <span>${moves}번</span><br>🧩 조각 수: <span>${totalPieces}개</span>`;
+    '⏱ 완료 시간: <span>' + m + '분 ' + s + '초</span><br>🖱 이동 횟수: <span>' + moves + '번</span><br>🧩 조각 수: <span>' + totalPieces + '개</span>';
   document.getElementById('success-screen').classList.add('show');
 }
 
-function shuffleArray(arr) {
-  for (let i = arr.length-1; i > 0; i--) {
-    const j = Math.floor(Math.random()*(i+1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+// ── History ───────────────────────────────────────────
+function doSaveHistory() {
+  var cv = document.createElement('canvas');
+  cv.width = boardW; cv.height = boardH;
+  cv.getContext('2d').drawImage(sourceImage, 0, 0, boardW, boardH);
+  var now = new Date();
+  var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+  var dateStr = now.getFullYear() + '.' + pad(now.getMonth()+1) + '.' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+  dbAdd('history', { dataUrl: cv.toDataURL('image/jpeg', .6), date: dateStr, grid: grid, moves: moves, seconds: seconds })
+    .then(function() { return dbAll('history'); })
+    .then(function(hist) { renderHistory(hist.slice().reverse()); })
+    .catch(function(e) { console.error('History error:', e); });
+}
+
+function renderHistory(records) {
+  var el = document.getElementById('history-grid');
+  document.getElementById('history-count').textContent = records.length ? records.length + '개' : '';
+  if (!records.length) { el.innerHTML = '<div class="history-empty">아직 완성한 퍼즐이 없어요!</div>'; return; }
+  el.innerHTML = '';
+  records.forEach(function(r) {
+    var card = document.createElement('div');
+    card.className = 'history-card';
+    var cv = document.createElement('canvas');
+    cv.width = 150; cv.height = 110;
+    cv.style.cssText = 'display:block;width:100%;height:110px';
+    var im = new Image();
+    im.onload = function() { cv.getContext('2d').drawImage(im, 0, 0, 150, 110); };
+    im.src = r.dataUrl;
+    var m = Math.floor(r.seconds/60), s = r.seconds%60;
+    card.appendChild(cv);
+    var info = document.createElement('div');
+    info.className = 'history-info';
+    info.innerHTML = '<div class="history-date">' + r.date + '</div><div class="history-meta">' + r.grid + '×' + r.grid + ' · ' + r.moves + '번 · ' + m + '분' + s + '초</div><div class="history-badge">✅ 완성</div>';
+    card.appendChild(info);
+    el.appendChild(card);
+  });
+}
+
+function clearHistory() {
+  if (!confirm('완성 기록을 모두 삭제할까요?')) return;
+  dbClear('history').then(function() { renderHistory([]); });
+}
+
+function shuffleArr(arr) {
+  for (var i = arr.length-1; i > 0; i--) {
+    var j = Math.floor(Math.random()*(i+1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
   }
   return arr;
 }
-
-
 </script>
 </body>
 </html>

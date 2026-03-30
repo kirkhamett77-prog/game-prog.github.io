@@ -402,9 +402,142 @@
     to   { transform: scale(1); opacity: 1; }
   }
 
-  .pop { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  /* ─── HISTORY ─── */
+  .history-section {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
 
-</style>
+  .history-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    color: var(--gold);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .history-title span {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 400;
+    letter-spacing: 1px;
+  }
+
+  .history-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .history-card {
+    background: var(--card);
+    border-radius: 14px;
+    overflow: hidden;
+    width: 160px;
+    border: 1px solid rgba(255,255,255,0.07);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .history-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+  }
+
+  .history-card canvas {
+    display: block;
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+  }
+
+  .history-info {
+    padding: 10px 12px;
+  }
+
+  .history-date {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  .history-meta {
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .history-badge {
+    display: inline-block;
+    background: rgba(6,214,160,0.15);
+    color: var(--green);
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .history-empty {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-style: italic;
+    padding: 10px 0;
+  }
+
+  .history-clear {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+  }
+  .history-clear:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* saved image selector */
+  .saved-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 20px;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+  }
+
+  .saved-img-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+    padding: 0;
+    background: none;
+  }
+
+  .saved-img-btn:hover, .saved-img-btn.active {
+    border-color: var(--gold);
+    transform: scale(1.1);
+  }
+
+  .saved-img-btn canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
 </head>
 <body>
 
@@ -447,6 +580,9 @@
   <div class="stat"><div class="stat-value" id="stat-left">-</div><div class="stat-label">남은 조각</div></div>
 </div>
 
+<!-- SAVED IMAGES -->
+<div class="saved-images" id="saved-images"></div>
+
 <!-- GAME -->
 <div class="game-wrapper">
   <div class="board-wrap">
@@ -469,7 +605,65 @@
   <button class="btn btn-primary" onclick="startGame(); document.getElementById('success-screen').classList.remove('show')">다시 하기</button>
 </div>
 
+<!-- HISTORY -->
+<div class="history-section">
+  <div class="history-title">
+    🏆 완성 기록
+    <span id="history-count"></span>
+    <button class="history-clear" onclick="clearHistory()">기록 삭제</button>
+  </div>
+  <div class="history-grid" id="history-grid">
+    <div class="history-empty">아직 완성한 퍼즐이 없어요!</div>
+  </div>
+</div>
+
 <script>
+// ── IndexedDB ──────────────────────────────────────
+const DB_NAME = 'jigsaw_db', DB_VER = 1;
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('images'))
+        d.createObjectStore('images', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('history'))
+        d.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbAdd(store, data) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).add(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbClear(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).clear();
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
+  });
+}
+
 // ── State ──────────────────────────────────────────
 let grid = 4;
 let pieceW, pieceH, boardW, boardH;
@@ -480,64 +674,56 @@ let seconds = 0;
 let timerInterval = null;
 let hintVisible = false;
 let dragPieceId = null;
-
-// Mobile tap-to-place state
 let selectedPieceId = null;
-
-// Piece state: { id, row, col, placed, el }
 let pieces = [];
-
-// Default image
 let sourceImage = null;
+let savedImages = []; // { id, dataUrl }
 
 // ── Init ────────────────────────────────────────────
-window.onload = () => {
-  createDefaultImage().then(img => { sourceImage = img; startGame(); });
+window.onload = async () => {
+  await openDB();
+  await loadSavedImages();
+  await loadHistory();
+  if (savedImages.length > 0) {
+    await selectSavedImage(savedImages[0]);
+  } else {
+    sourceImage = await createDefaultImage();
+    startGame();
+  }
 };
 
-function createDefaultImage() {
-  return new Promise(resolve => {
+// ── Saved images ──────────────────────────────────
+async function loadSavedImages() {
+  savedImages = await dbGetAll('images');
+  renderSavedImages();
+}
+
+function renderSavedImages() {
+  const wrap = document.getElementById('saved-images');
+  wrap.innerHTML = '';
+  savedImages.forEach(img => {
+    const btn = document.createElement('button');
+    btn.className = 'saved-img-btn';
+    btn.title = '이 사진으로 퍼즐 시작';
+
     const c = document.createElement('canvas');
-    c.width = 480; c.height = 480;
-    const ctx = c.getContext('2d');
-
-    // Colorful gradient background
-    const grad = ctx.createLinearGradient(0, 0, 480, 480);
-    grad.addColorStop(0, '#e94560');
-    grad.addColorStop(0.33, '#f5a623');
-    grad.addColorStop(0.66, '#00b4d8');
-    grad.addColorStop(1, '#06d6a0');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 480, 480);
-
-    // Fun shapes
-    const shapes = [
-      { x: 120, y: 120, r: 80, color: 'rgba(255,255,255,0.15)' },
-      { x: 360, y: 150, r: 60, color: 'rgba(255,255,255,0.1)' },
-      { x: 240, y: 300, r: 100, color: 'rgba(0,0,0,0.1)' },
-      { x: 80,  y: 360, r: 50, color: 'rgba(255,255,255,0.12)' },
-      { x: 400, y: 360, r: 70, color: 'rgba(255,255,255,0.08)' },
-    ];
-    shapes.forEach(s => {
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = s.color;
-      ctx.fill();
-    });
-
-    // Stars / symbols
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.font = 'bold 60px serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const emojis = ['🌟','🎨','🌈','🦋','🌸'];
-    const pos = [[120,120],[360,120],[240,240],[120,360],[360,360]];
-    emojis.forEach((e, i) => ctx.fillText(e, pos[i][0], pos[i][1]));
-
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.src = c.toDataURL();
+    c.width = 52; c.height = 52;
+    const image = new Image();
+    image.onload = () => {
+      c.getContext('2d').drawImage(image, 0, 0, 52, 52);
+    };
+    image.src = img.dataUrl;
+    btn.appendChild(c);
+    btn.onclick = () => selectSavedImage(img);
+    wrap.appendChild(btn);
   });
+}
+
+async function selectSavedImage(imgRecord) {
+  document.querySelectorAll('.saved-img-btn').forEach(b => b.classList.remove('active'));
+  const img = new Image();
+  img.onload = () => { sourceImage = img; startGame(); };
+  img.src = imgRecord.dataUrl;
 }
 
 // ── Load custom image ──────────────────────────────
@@ -545,147 +731,140 @@ function loadImage(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = async ev => {
+    const dataUrl = ev.target.result;
+
+    // 중복 방지: 이미 10장이면 가장 오래된 것 삭제
+    if (savedImages.length >= 10) {
+      const tx = db.transaction('images', 'readwrite');
+      tx.objectStore('images').delete(savedImages[0].id);
+      savedImages.shift();
+    }
+
+    const id = await dbAdd('images', { dataUrl });
+    savedImages.push({ id, dataUrl });
+    renderSavedImages();
+
     const img = new Image();
     img.onload = () => { sourceImage = img; startGame(); };
-    img.src = ev.target.result;
+    img.src = dataUrl;
   };
   reader.readAsDataURL(file);
+}
+
+// ── Default image ──────────────────────────────────
+function createDefaultImage() {
+  return new Promise(resolve => {
+    const c = document.createElement('canvas');
+    c.width = 480; c.height = 480;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 480, 480);
+    grad.addColorStop(0, '#e94560');
+    grad.addColorStop(0.33, '#f5a623');
+    grad.addColorStop(0.66, '#00b4d8');
+    grad.addColorStop(1, '#06d6a0');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 480, 480);
+    const shapes = [
+      { x: 120, y: 120, r: 80, color: 'rgba(255,255,255,0.15)' },
+      { x: 360, y: 150, r: 60, color: 'rgba(255,255,255,0.1)'  },
+      { x: 240, y: 300, r: 100,color: 'rgba(0,0,0,0.1)'        },
+      { x: 80,  y: 360, r: 50, color: 'rgba(255,255,255,0.12)' },
+      { x: 400, y: 360, r: 70, color: 'rgba(255,255,255,0.08)' },
+    ];
+    shapes.forEach(s => {
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = s.color; ctx.fill();
+    });
+    ctx.font = 'bold 60px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    [['🌟',120,120],['🎨',360,120],['🌈',240,240],['🦋',120,360],['🌸',360,360]]
+      .forEach(([e,x,y]) => ctx.fillText(e, x, y));
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = c.toDataURL();
+  });
 }
 
 // ── Start Game ─────────────────────────────────────
 function startGame() {
   grid = parseInt(document.getElementById('difficulty').value);
   totalPieces = grid * grid;
-  correctCount = 0;
-  moves = 0;
-  pieces = [];
+  correctCount = 0; moves = 0; pieces = [];
 
   clearInterval(timerInterval);
-  seconds = 0;
-  updateTimer();
+  seconds = 0; updateTimer();
   timerInterval = setInterval(() => { seconds++; updateTimer(); }, 1000);
-
   updateStats();
 
-  // Board sizing — 전체 화면에서 트레이(140~220px) + gap(12px) 제외
   const boardEl = document.getElementById('puzzle-board');
   const trayW = window.innerWidth >= 700 ? 220 : 140;
-  const gapPad = 12 * 2 + 12; // padding*2 + gap
+  const gapPad = 36;
   const available = Math.min(window.innerWidth - trayW - gapPad, 500);
   const maxW = Math.max(available, 160);
-  boardEl.style.width = 'auto'; // reset first
-  boardW = maxW;
-  boardH = maxW;
-  pieceW = Math.floor(boardW / grid);
-  pieceH = Math.floor(boardH / grid);
-  boardW = pieceW * grid;
-  boardH = pieceH * grid;
+  boardW = maxW; boardH = maxW;
+  pieceW = Math.floor(boardW / grid); pieceH = Math.floor(boardH / grid);
+  boardW = pieceW * grid; boardH = pieceH * grid;
+  boardEl.style.width = boardW + 'px'; boardEl.style.height = boardH + 'px';
 
-  boardEl.style.width  = boardW + 'px';
-  boardEl.style.height = boardH + 'px';
-
-  // Hint canvas
   const hint = document.getElementById('hint-overlay');
-  hint.width  = boardW;
-  hint.height = boardH;
-  hint.style.width  = boardW + 'px';
-  hint.style.height = boardH + 'px';
-  const hctx = hint.getContext('2d');
-  hctx.drawImage(sourceImage, 0, 0, boardW, boardH);
+  hint.width = boardW; hint.height = boardH;
+  hint.style.width = boardW + 'px'; hint.style.height = boardH + 'px';
+  hint.getContext('2d').drawImage(sourceImage, 0, 0, boardW, boardH);
   if (hintVisible) { hintVisible = false; hint.classList.remove('show'); }
 
-  // Clear board (keep hint overlay)
-  const cells = boardEl.querySelectorAll('.puzzle-cell');
-  cells.forEach(c => c.remove());
-
-  // Draw pieces
+  boardEl.querySelectorAll('.puzzle-cell').forEach(c => c.remove());
   const order = shuffleArray([...Array(totalPieces).keys()]);
 
   order.forEach((id, trayIdx) => {
-    const row = Math.floor(id / grid);
-    const col = id % grid;
-
-    // Draw piece on small canvas
+    const row = Math.floor(id / grid), col = id % grid;
     const pc = document.createElement('canvas');
-    pc.width  = pieceW;
-    pc.height = pieceH;
-    const pctx = pc.getContext('2d');
-    pctx.drawImage(sourceImage,
-      col * (sourceImage.width / grid),
-      row * (sourceImage.height / grid),
-      sourceImage.width / grid,
-      sourceImage.height / grid,
-      0, 0, pieceW, pieceH
-    );
+    pc.width = pieceW; pc.height = pieceH;
+    pc.getContext('2d').drawImage(sourceImage,
+      col*(sourceImage.width/grid), row*(sourceImage.height/grid),
+      sourceImage.width/grid, sourceImage.height/grid, 0, 0, pieceW, pieceH);
 
-    // Board empty cell
     const cell = document.createElement('div');
     cell.className = 'puzzle-cell';
-    cell.style.left   = (col * pieceW) + 'px';
-    cell.style.top    = (row * pieceH) + 'px';
-    cell.style.width  = pieceW + 'px';
-    cell.style.height = pieceH + 'px';
-    cell.dataset.id   = id;
+    cell.style.cssText = `left:${col*pieceW}px;top:${row*pieceH}px;width:${pieceW}px;height:${pieceH}px;`;
+    cell.dataset.id = id;
     cell.addEventListener('dragover', e => e.preventDefault());
     cell.addEventListener('drop', e => dropOnCell(e, id));
     cell.addEventListener('click', () => tapOnCell(id));
     boardEl.appendChild(cell);
 
-    // Tray piece
     const tp = document.createElement('div');
     tp.className = 'tray-piece pop';
     tp.draggable = true;
     tp.dataset.id = id;
     tp.style.animationDelay = (trayIdx * 30) + 'ms';
-
     const tpc = pc.cloneNode();
     tpc.getContext('2d').drawImage(pc, 0, 0);
     tp.appendChild(tpc);
 
-    tp.addEventListener('dragstart', e => {
-      dragPieceId = id;
-      setTimeout(() => tp.classList.add('dragging'), 0);
-    });
-    tp.addEventListener('dragend', () => {
-      tp.classList.remove('dragging');
-      dragPieceId = null;
-    });
-
-    // ── Touch / tap support ──
+    tp.addEventListener('dragstart', e => { dragPieceId = id; setTimeout(() => tp.classList.add('dragging'), 0); });
+    tp.addEventListener('dragend', () => { tp.classList.remove('dragging'); dragPieceId = null; });
     tp.addEventListener('touchstart', e => handleTouchStart(e, id), { passive: false });
     tp.addEventListener('touchmove',  e => handleTouchMove(e),      { passive: false });
     tp.addEventListener('touchend',   e => handleTouchEnd(e),       { passive: false });
-
-    // Tap-to-select (click fallback for mobile)
     tp.addEventListener('click', () => selectPiece(id));
 
     document.getElementById('piece-tray').appendChild(tp);
-
     pieces.push({ id, row, col, placed: false, trayEl: tp, cellEl: cell });
   });
 
-  // Clear tray (rebuild)
   const tray = document.getElementById('piece-tray');
   tray.innerHTML = '';
   pieces.forEach(p => tray.appendChild(p.trayEl));
-
   updateProgress();
 }
 
-// ── Tap-to-select / place (mobile) ────────────────
+// ── Tap select ────────────────────────────────────
 function selectPiece(id) {
-  // Deselect if same
-  if (selectedPieceId === id) {
-    clearSelection();
-    return;
-  }
+  if (selectedPieceId === id) { clearSelection(); return; }
   clearSelection();
   selectedPieceId = id;
   const piece = pieces.find(p => p.id === id);
   if (piece) piece.trayEl.classList.add('selected');
-
-  // Highlight empty board cells
   document.querySelectorAll('.puzzle-cell:not(.correct)').forEach(c => c.classList.add('highlight'));
 }
 
@@ -697,35 +876,24 @@ function clearSelection() {
 
 function tapOnCell(cellId) {
   if (selectedPieceId === null) return;
-  // Simulate drop
   dropOnCell({ preventDefault: () => {} }, cellId, selectedPieceId);
   clearSelection();
 }
 
-// ── Touch drag (ghost follow finger) ──────────────
-let touchGhostCanvas = null;
-
+// ── Touch drag ────────────────────────────────────
 function handleTouchStart(e, id) {
   e.preventDefault();
-  dragPieceId = id;
-  selectPiece(id);
-
+  dragPieceId = id; selectPiece(id);
   const piece = pieces.find(p => p.id === id);
   if (!piece) return;
-
-  // Create ghost
   const ghost = document.getElementById('touch-ghost');
   ghost.innerHTML = '';
   const gc = piece.trayEl.querySelector('canvas').cloneNode();
   gc.getContext('2d').drawImage(piece.trayEl.querySelector('canvas'), 0, 0);
   ghost.appendChild(gc);
-  ghost.style.width  = pieceW + 'px';
-  ghost.style.height = pieceH + 'px';
-  ghost.style.display = 'block';
-
+  ghost.style.width = pieceW + 'px'; ghost.style.height = pieceH + 'px'; ghost.style.display = 'block';
   const t = e.touches[0];
-  ghost.style.left = (t.clientX - pieceW / 2) + 'px';
-  ghost.style.top  = (t.clientY - pieceH / 2) + 'px';
+  ghost.style.left = (t.clientX - pieceW/2) + 'px'; ghost.style.top = (t.clientY - pieceH/2) + 'px';
 }
 
 function handleTouchMove(e) {
@@ -733,10 +901,7 @@ function handleTouchMove(e) {
   if (dragPieceId === null) return;
   const t = e.touches[0];
   const ghost = document.getElementById('touch-ghost');
-  ghost.style.left = (t.clientX - pieceW / 2) + 'px';
-  ghost.style.top  = (t.clientY - pieceH / 2) + 'px';
-
-  // Highlight cell under finger
+  ghost.style.left = (t.clientX - pieceW/2) + 'px'; ghost.style.top = (t.clientY - pieceH/2) + 'px';
   document.querySelectorAll('.puzzle-cell').forEach(c => c.classList.remove('highlight'));
   const el = document.elementFromPoint(t.clientX, t.clientY);
   const cell = el && el.closest('.puzzle-cell');
@@ -745,72 +910,109 @@ function handleTouchMove(e) {
 
 function handleTouchEnd(e) {
   e.preventDefault();
-  const ghost = document.getElementById('touch-ghost');
-  ghost.style.display = 'none';
-
+  document.getElementById('touch-ghost').style.display = 'none';
   if (dragPieceId === null) return;
-
   const t = e.changedTouches[0];
   const el = document.elementFromPoint(t.clientX, t.clientY);
   const cell = el && el.closest('.puzzle-cell');
-
-  if (cell) {
-    const cellId = parseInt(cell.dataset.id);
-    dropOnCell({ preventDefault: () => {} }, cellId, dragPieceId);
-  }
-
-  dragPieceId = null;
-  clearSelection();
+  if (cell) dropOnCell({ preventDefault: () => {} }, parseInt(cell.dataset.id), dragPieceId);
+  dragPieceId = null; clearSelection();
 }
 
-// ── Drop logic ────────────────────────────────────
+// ── Drop ──────────────────────────────────────────
 function dropOnCell(e, cellId, forcePieceId) {
   e.preventDefault();
   const pid = forcePieceId !== undefined ? forcePieceId : dragPieceId;
   if (pid === null || pid === undefined) return;
   if (pid !== cellId) {
-    // Wrong cell
     const cell = document.querySelector(`.puzzle-cell[data-id="${cellId}"]`);
-    if (cell) {
-      cell.style.boxShadow = '0 0 12px rgba(233,69,96,0.7)';
-      setTimeout(() => cell.style.boxShadow = '', 500);
-    }
+    if (cell) { cell.style.boxShadow = '0 0 12px rgba(233,69,96,0.7)'; setTimeout(() => cell.style.boxShadow = '', 500); }
     return;
   }
-
   const piece = pieces.find(p => p.id === pid);
   if (!piece || piece.placed) return;
+  moves++; correctCount++; piece.placed = true;
 
-  moves++;
-  correctCount++;
-  piece.placed = true;
-
-  // Draw piece onto cell
   const pc = document.createElement('canvas');
-  pc.width  = pieceW;
-  pc.height = pieceH;
-  const pctx = pc.getContext('2d');
-  pctx.drawImage(sourceImage,
-    piece.col * (sourceImage.width / grid),
-    piece.row * (sourceImage.height / grid),
-    sourceImage.width / grid,
-    sourceImage.height / grid,
-    0, 0, pieceW, pieceH
-  );
-
+  pc.width = pieceW; pc.height = pieceH;
+  pc.getContext('2d').drawImage(sourceImage,
+    piece.col*(sourceImage.width/grid), piece.row*(sourceImage.height/grid),
+    sourceImage.width/grid, sourceImage.height/grid, 0, 0, pieceW, pieceH);
   piece.cellEl.appendChild(pc);
   piece.cellEl.classList.add('correct');
-
-  // Remove from tray
   piece.trayEl.remove();
-
-  updateStats();
-  updateProgress();
+  updateStats(); updateProgress();
 
   if (correctCount === totalPieces) {
     clearInterval(timerInterval);
-    setTimeout(showSuccess, 600);
+    setTimeout(() => { saveHistory(); showSuccess(); }, 600);
   }
+}
+
+// ── History ───────────────────────────────────────
+async function saveHistory() {
+  // 완성된 보드를 캡처
+  const canvas = document.createElement('canvas');
+  canvas.width = boardW; canvas.height = boardH;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(sourceImage, 0, 0, boardW, boardH);
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const record = {
+    dataUrl: canvas.toDataURL('image/jpeg', 0.6),
+    date: dateStr,
+    grid,
+    moves,
+    seconds
+  };
+  await dbAdd('history', record);
+  await loadHistory();
+}
+
+async function loadHistory() {
+  const records = await dbGetAll('history');
+  renderHistory(records.reverse()); // 최신순
+}
+
+function renderHistory(records) {
+  const grid_el = document.getElementById('history-grid');
+  const count_el = document.getElementById('history-count');
+  count_el.textContent = records.length > 0 ? `${records.length}개` : '';
+
+  if (records.length === 0) {
+    grid_el.innerHTML = '<div class="history-empty">아직 완성한 퍼즐이 없어요!</div>';
+    return;
+  }
+
+  grid_el.innerHTML = '';
+  records.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'history-card';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 160; canvas.height = 120;
+    const img = new Image();
+    img.onload = () => canvas.getContext('2d').drawImage(img, 0, 0, 160, 120);
+    img.src = r.dataUrl;
+
+    const m = Math.floor(r.seconds/60), s = r.seconds%60;
+    card.innerHTML = `
+      <div class="history-info">
+        <div class="history-date">${r.date}</div>
+        <div class="history-meta">${r.grid}×${r.grid} · ${r.moves}번 · ${m}분${s}초</div>
+        <div class="history-badge">✅ 완성</div>
+      </div>`;
+    card.insertBefore(canvas, card.firstChild);
+    grid_el.appendChild(card);
+  });
+}
+
+async function clearHistory() {
+  if (!confirm('완성 기록을 모두 삭제할까요?')) return;
+  await dbClear('history');
+  await loadHistory();
 }
 
 // ── Hint ──────────────────────────────────────────
@@ -819,27 +1021,23 @@ function toggleHint() {
   document.getElementById('hint-overlay').classList.toggle('show', hintVisible);
 }
 
-// ── Shuffle tray ──────────────────────────────────
+// ── Shuffle ───────────────────────────────────────
 function shuffleTray() {
   const tray = document.getElementById('piece-tray');
-  const children = Array.from(tray.children);
-  shuffleArray(children).forEach(c => tray.appendChild(c));
+  shuffleArray(Array.from(tray.children)).forEach(c => tray.appendChild(c));
 }
 
-// ── Stats & Progress ──────────────────────────────
+// ── Stats ─────────────────────────────────────────
 function updateStats() {
   document.getElementById('stat-moves').textContent = moves;
   document.getElementById('stat-left').textContent  = totalPieces - correctCount;
 }
-
 function updateTimer() {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  document.getElementById('stat-time').textContent = m + ':' + String(s).padStart(2, '0');
+  const m = Math.floor(seconds/60), s = seconds%60;
+  document.getElementById('stat-time').textContent = m + ':' + String(s).padStart(2,'0');
 }
-
 function updateProgress() {
-  const pct = Math.round((correctCount / totalPieces) * 100);
+  const pct = Math.round((correctCount/totalPieces)*100);
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('progress-text').textContent =
     correctCount === 0 ? '게임을 시작하세요!' :
@@ -848,23 +1046,21 @@ function updateProgress() {
 }
 
 function showSuccess() {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const m = Math.floor(seconds/60), s = seconds%60;
   document.getElementById('success-stats').innerHTML =
-    `⏱ 완료 시간: <span>${m}분 ${s}초</span><br>
-     🖱 이동 횟수: <span>${moves}번</span><br>
-     🧩 조각 수: <span>${totalPieces}개</span>`;
+    `⏱ 완료 시간: <span>${m}분 ${s}초</span><br>🖱 이동 횟수: <span>${moves}번</span><br>🧩 조각 수: <span>${totalPieces}개</span>`;
   document.getElementById('success-screen').classList.add('show');
 }
 
-// ── Utils ─────────────────────────────────────────
 function shuffleArray(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
+
+
 </script>
 </body>
 </html>
